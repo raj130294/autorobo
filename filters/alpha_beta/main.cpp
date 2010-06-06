@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <vector>
 #include <fstream>
+#include <assert.h>
 
 #include "alphabeta.h"
 #include "simulator.h"
@@ -82,6 +83,7 @@ int main(int argc, char **argv) {
 	data_file.close();
 	
 	FILE* gnuplot = popen("gnuplot", "w");
+	assert(gnuplot);
 /*	fprintf(gnuplot, "set terminal pdfcairo \n");
 	fprintf(gnuplot, "set output \"plot.pdf\" \n");*/
 	fprintf(gnuplot, "set terminal canvas mouse size 600,400 fsize 10 lw 1" \
