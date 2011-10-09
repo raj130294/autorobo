@@ -1,0 +1,44 @@
+#!/bin/bash -ex
+# Copyright 2010-2011 Daniel J Blueman <daniel@quora.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+disk="$1"
+rootfs="$2"
+kernel="$3"
+if [ -z "$disk" -o -z "$rootfs" -o -z "$kernel" ]; then
+	echo "usage: build-mmc <disk> <rootfs.tar.gz> <kernel>"
+	exit 1
+fi
+
+if [ `id -u` -ne 0 ]; then
+	echo "run as root"
+	exit 1
+fi
+
+umount ${disk}1
+umount ${disk}2
+parted -s -- ${disk} mklabel msdos mkpart pri fat32 1 65 mkpart pri ext3 66 -1
+mkfs.vfat -F 32 -n boot ${disk}1
+mkfs.ext4 -L root -b 4096 -E stride=32,stripe-width=32 -O ^resize_inode,^huge_file ${disk}2
+tune2fs -o journal_data_writeback ${disk}2
+dir=`mktemp -d`
+mount ${disk}1 $dir
+cp "$kernel" $dir/uImage
+umount $dir
+mount -o barrier=0 ${disk}2 $dir
+tar -xzp -C $dir -f "$rootfs"
+sync
+umount $dir
+rmdir $dir
+sync
