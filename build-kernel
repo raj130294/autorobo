@@ -1,0 +1,42 @@
+#!/bin/bash -ex
+# Copyright 2010-2011 Daniel J Blueman <daniel@quora.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ensure the environment is safe
+unset CFLAGS CXXFLAGS LDFLAGS
+
+sudo apt-get -y install uboot-mkimage git-core
+
+base=`pwd`
+#kernelver=2.6.34
+kernelver=3.1-rc9
+kernelurl="git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git"
+# kernelurl="git://git.kernel.org/pub/scm/linux/kernel/git/tmlind/linux-omap-2.6.git"
+[ -e linux ] || git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git linux
+cd linux
+git checkout v$kernelver
+
+export PATH=$base/toolchain/bin:$PATH
+export ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- KCFLAGS='-mtune=cortex-a8 -mfpu=neon -Wa,-mfpu=neon -mfloat-abi=softfp'
+PARALLEL=-j`getconf _NPROCESSORS_ONLN`
+
+make distclean
+cp $base/config-${kernelver}-igep .config
+make oldconfig
+make uImage
+cp arch/arm/boot/uImage ${base}/uImage-$kernelver
+
+# export INSTALL_MOD_PATH=<path to rootfs>
+# make modules
+# make modules_install
