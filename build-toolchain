@@ -1,0 +1,58 @@
+#!/bin/bash -ex
+# Copyright 2010-2011 Daniel J Blueman <daniel@quora.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+unset CFLAGS CXXFLAGS LDFLAGS
+
+sudo apt-get build-dep binutils gcc-4.6-base
+
+BINUTILS=2.21.1
+GCC=4.6.1
+# GNUMIRROR=http://www.mirrorservice.org/sites/ftp.gnu.org/gnu
+GNUMIRROR=http://ftp.twaren.net/Unix/GNU/gnu/
+TARGET=arm-linux-gnueabi
+TOPDIR=`pwd`
+PREFIX=$TOPDIR/toolchain
+BUILDDIR=$TOPDIR/build
+rm -rf $PREFIX $BUILDDIR
+mkdir -p $BUILDDIR
+PARALLEL=-j`getconf _NPROCESSORS_ONLN`
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin LANG=C CFLAGS="-O3" # -Wno-error"
+
+mkdir -p $PREFIX
+
+cd $TOPDIR
+[ -f binutils-${BINUTILS}.tar.bz2 ] || wget -t10 -c $GNUMIRROR/binutils/binutils-${BINUTILS}.tar.bz2
+tar -xjf binutils-$BINUTILS.tar.bz2 -C $BUILDDIR
+mkdir -p $BUILDDIR/binutils-${BINUTILS}-obj
+cd $BUILDDIR/binutils-${BINUTILS}-obj
+../binutils-${BINUTILS}/configure --target=$TARGET --prefix=$PREFIX --disable-nls
+
+make $PARALLEL
+make install
+
+cd $TOPDIR
+[ -f gcc-core-${GCC}.tar.bz2 ] || wget -t10 -c $GNUMIRROR/gcc/gcc-$GCC/gcc-core-${GCC}.tar.bz2
+tar -xjf gcc-core-${GCC}.tar.bz2 -C $BUILDDIR
+mkdir -p $BUILDDIR/gcc-${GCC}-obj
+cd $BUILDDIR/gcc-${GCC}-obj
+../gcc-${GCC}/configure --target=$TARGET --prefix=$PREFIX --enable-languages=c --disable-threads --disable-shared --disable-nls
+
+make $PARALLEL all-gcc all-target-libgcc
+make install-gcc install-target-libgcc
+
+# cleanup
+cd $TOPDIR
+rm -rf binutils-$BINUTILS.tar.bz2 gcc-core-${GCC}.tar.bz2 $BUILDDIR
