@@ -1,0 +1,33 @@
+#!/bin/bash -ex
+# Copyright 2010-2011 Daniel J Blueman <daniel@quora.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ensure safe environment
+unset CFLAGS CXXFLAGS LDFLAGS
+
+# base
+packages="build-essential,openssh-server"
+
+# system
+packages+=",nano,joe,linux-firmware,wireless-tools,usbutils"
+
+# development
+packages+=",libi2c-dev,i2c-tools"
+
+sudo apt-get -y install rootstock uboot-mkimage
+sudo rootstock --dist oneiric --fqdn interceptor --login master --password master --imagesize 3G --kblayout gb --serial ttyS2 --locale en_US --seed "$packages"
+# --kernel-image http://rcn-ee.net/deb/lucid/v2.6.34-dl3/linux-image-2.6.34-dl3_1.0lucid_armel.deb
+# sudo rootstock --fqdn beagleboard --login ubuntu --password temppwd --imagesize 2G --seed xfce4,gdm --dist karmic  --serial ttyS2 --kernel-image http://rcn-ee.net/deb/kernel/beagle/karmic/v2.6.29-58cf2f1-oer44.1/linux-image-2.6.29-oer44.1_1.0karmic_armel.deb
+# mkimage -A arm -O linux -T kernel -C none -a 0x80008000 -e 0x80008000 -n "Linux" -d ./vmlinuz-*  uImage.bin
+sudo bash -c 'chown $SUDO_UID:$SUDO_GID armel-rootfs-* rootstock-*'
